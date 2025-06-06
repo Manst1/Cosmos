@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cosmos</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            background: linear-gradient(to bottom, #1a1a3d, #2a2a5e);
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            font-family: 'Arial', sans-serif;
+        }
+        canvas {
+            border: 2px solid #ffffff20;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.2);
+        }
+        #gameOverScreen, #startScreen, #difficultyScreen {
+            position: absolute;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            display: none;
+        }
+        #scoreDisplay {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: white;
+            font-size: 24px;
+            text-shadow: 0 0 5px #00ffcc;
+        }
+        .difficulty-btn {
+            background-color: #10b981;
+            margin: 5px;
+            padding: 10px 20px;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+        }
+        .difficulty-btn:hover {
+            background-color: #059669;
+        }
+        #endGameButton {
+            position: absolute;
+            bottom: 20px;
+            background-color: #ef4444;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 5px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            display: none;
+        }
+        #endGameButton:hover {
+            background-color: #dc2626;
+        }
+    </style>
+</head>
+<body>
+    <div id="scoreDisplay">Score: 0</div>
+    <canvas id="gameCanvas" width="800" height="600"></canvas>
+    <div id="difficultyScreen">
+        <h1 class="text-4xl font-bold mb-4 text-cyan-300">Choose Difficulty</h1>
+        <button id="peacefulButton" class="difficulty-btn text-white font-bold py-2 px-4 rounded">Peaceful</button><br>
+        <button id="normalButton" class="difficulty-btn text-white font-bold py-2 px-4 rounded">Normal</button><br>
+        <button id="hardButton" class="difficulty-btn text-white font-bold py-2 px-4 rounded">Hard</button><br>
+        <button id="superHardButton" class="difficulty-btn text-white font-bold py-2 px-4 rounded">Super Hard</button><br>
+        <button id="impossibleButton" class="difficulty-btn text-white font-bold py-2 px-4 rounded">Impossible</button><br>
+        <button id="ledianModusButton" class="difficulty-btn text-white font-bold py-2 px-4 rounded">Ledian Modus</button>
+    </div>
+    <div id="startScreen">
+        <h1 class="text-4xl font-bold mb-4 text-cyan-300">Cosmic Collector</h1>
+        <p class="text-lg mb-4">Use arrow keys or WASD to move your spaceship.<br>Collect energy orbs (blue) to score points.<br>Avoid asteroids (bright red are fast, dark red are slow)!</p>
+        <button id="startButton" class="bg-cyan-500 hover:bg-cyan-600 text-white font-bold py-2 px-4 rounded">Start Game</button>
+    </div>
+    <div id="gameOverScreen">
+        <h1 class="text-4xl font-bold mb-4 text-cyan-300">Game Over</h1>
+        <p class="text-lg mb-4">Final Score: <span id="finalScore">0</span></p>
+        <button id="retryButton" class="bg-cyan-500 hover:bg-cyan-600 text-white font-bold py-2 px-4 rounded mr-2">Retry</button>
+        <button id="changeDifficultyButton" class="bg-cyan-500 hover:bg-cyan-600 text-white font-bold py-2 px-4 rounded">Change Difficulty</button>
+    </div>
+    <button id="endGameButton">Spiel beenden</button>
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const scoreDisplay = document.getElementById('scoreDisplay');
+        const startScreen = document.getElementById('startScreen');
+        const gameOverScreen = document.getElementById('gameOverScreen');
+        const difficultyScreen = document.getElementById('difficultyScreen');
+        const finalScore = document.getElementById('finalScore');
+        const startButton = document.getElementById('startButton');
+        const retryButton = document.getElementById('retryButton');
+        const changeDifficultyButton = document.getElementById('changeDifficultyButton');
+        const peacefulButton = document.getElementById('peacefulButton');
+        const normalButton = document.getElementById('normalButton');
+        const hardButton = document.getElementById('hardButton');
+        const superHardButton = document.getElementById('superHardButton');
+        const impossibleButton = document.getElementById('impossibleButton');
+        const ledianModusButton = document.getElementById('ledianModusButton');
+        const endGameButton = document.getElementById('endGameButton');
+
+        let score = 0;
+        let gameRunning = false;
+        let difficulty = 1;
+        let selectedDifficulty = 'hard';
+        let asteroidSpawnDelay = 0;
+
+        const player = {
+            x: canvas.width / 2,
+            y: canvas.height / 2,
+            radius: 20,
+            speed: 5,
+            dx: 0,
+            dy: 0
+        };
+
+        const orbs = [];
+        const asteroids = [];
+        const keys = {};
+
+        function createOrb() {
+            const x = Math.random() * canvas.width;
+            const y = Math.random() * canvas.height;
+            orbs.push({ x, y, radius: 10 });
+        }
+
+        function createAsteroid() {
+            if (selectedDifficulty === 'peaceful') return; // No asteroids in Peaceful mode
+            if (asteroidSpawnDelay > 0) return; // Delay for Normal mode
+
+            const edge = Math.floor(Math.random() * 4);
+            let isFast;
+            if (selectedDifficulty === 'normal') {
+                isFast = Math.random() < 0.3; // 30% chance for fast asteroids
+            } else if (selectedDifficulty === 'superHard') {
+                isFast = Math.random() < 0.7; // 70% chance for fast asteroids
+            } else if (selectedDifficulty === 'impossible') {
+                isFast = Math.random() < 0.9; // 90% chance for fast asteroids
+            } else if (selectedDifficulty === 'ledianModus') {
+                isFast = Math.random() < 0.95; // 95% chance for fast asteroids
+            } else {
+                isFast = Math.random() < 0.5; // 50% chance for Hard mode
+            }
+
+            let x, y, dx, dy, radius, color, speedMultiplier;
+
+            if (isFast) {
+                radius = selectedDifficulty === 'ledianModus' ? 8 : 10; // Smaller fast asteroids in Ledian Modus
+                color = '#ff6666';
+                speedMultiplier = selectedDifficulty === 'ledianModus' ? 5 : 3; // Even faster in Ledian Modus
+            } else {
+                radius = 20;
+                color = '#990000';
+                speedMultiplier = selectedDifficulty === 'ledianModus' ? 2.5 : 1.5; // Faster in Ledian Modus
+            }
+
+            if (edge === 0) { // Top
+                x = Math.random() * canvas.width;
+                y = -radius;
+                dx = (Math.random() - 0.5) * 4 * difficulty * speedMultiplier;
+                dy = Math.random() * 2 * difficulty * speedMultiplier + 2;
+            } else if (edge === 1) { // Right
+                x = canvas.width + radius;
+                y = Math.random() * canvas.height;
+                dx = -(Math.random() * 2 * difficulty * speedMultiplier + 2);
+                dy = (Math.random() - 0.5) * 4 * difficulty * speedMultiplier;
+            } else if (edge === 2) { // Bottom
+                x = Math.random() * canvas.width;
+                y = canvas.height + radius;
+                dx = (Math.random() - 0.5) * 4 * difficulty * speedMultiplier;
+                dy = -(Math.random() * 2 * difficulty * speedMultiplier + 2);
+            } else { // Left
+                x = -radius;
+                y = Math.random() * canvas.height;
+                dx = Math.random() * 2 * difficulty * speedMultiplier + 2;
+                dy = (Math.random() - 0.5) * 4 * difficulty * speedMultiplier;
+            }
+            asteroids.push({ x, y, radius, dx, dy, color });
+        }
+
+        function drawPlayer() {
+            ctx.beginPath();
+            ctx.arc(player.x, player.y, player.radius, 0, Math.PI * 2);
+            ctx.fillStyle = '#00ffcc';
+            ctx.fill();
+            ctx.strokeStyle = '#ffffff';
+            ctx.stroke();
+            ctx.closePath();
+        }
+
+        function drawOrbs() {
+            orbs.forEach(orb => {
+                ctx.beginPath();
+                ctx.arc(orb.x, orb.y, orb.radius, 0, Math.PI * 2);
+                ctx.fillStyle = '#00ccff';
+                ctx.fill();
+                ctx.closePath();
+            });
+        }
+
+        function drawAsteroids() {
+            asteroids.forEach(asteroid => {
+                ctx.beginPath();
+                ctx.arc(asteroid.x, asteroid.y, asteroid.radius, 0, Math.PI * 2);
+                ctx.fillStyle = asteroid.color;
+                ctx.fill();
+                ctx.closePath();
+            });
+        }
+
+        function updatePlayer() {
+            player.x += player.dx;
+            player.y += player.dy;
+
+            if (player.x < player.radius) player.x = player.radius;
+            if (player.x > canvas.width - player.radius) player.x = canvas.width - player.radius;
+            if (player.y < player.radius) player.y = player.radius;
+            if (player.y > canvas.height - player.radius) player.y = canvas.height - player.radius;
+        }
+
+        function updateOrbs() {
+            for (let i = orbs.length - 1; i >= 0; i--) {
+                const orb = orbs[i];
+                const dx = player.x - orb.x;
+                const dy = player.y - orb.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                if (distance < player.radius + orb.radius) {
+                    orbs.splice(i, 1);
+                    score += 10;
+                    scoreDisplay.textContent = `Score: ${score}`;
+                    if (selectedDifficulty === 'ledianModus' || selectedDifficulty !== 'impossible') {
+                        createOrb(); // Respawn orb in Ledian Modus
+                    }
+                }
+            }
+        }
+
+        function updateAsteroids() {
+            for (let i = asteroids.length - 1; i >= 0; i--) {
+                const asteroid = asteroids[i];
+                asteroid.x += asteroid.dx;
+                asteroid.y += asteroid.dy;
+
+                const dx = player.x - asteroid.x;
+                const dy = player.y - asteroid.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                if (distance < player.radius + asteroid.radius) {
+                    endGame();
+                    return;
+                }
+
+                if (asteroid.x < -asteroid.radius || asteroid.x > canvas.width + asteroid.radius ||
+                    asteroid.y < -asteroid.radius || asteroid.y > canvas.height + asteroid.radius) {
+                    asteroids.splice(i, 1);
+                }
+            }
+        }
+
+        function gameLoop(timestamp) {
+            if (!gameRunning) return;
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            updatePlayer();
+            updateOrbs();
+            updateAsteroids();
+            drawPlayer();
+            drawOrbs();
+            drawAsteroids();
+
+            let spawnRate;
+            if (selectedDifficulty === 'normal') spawnRate = 0.01;
+            else if (selectedDifficulty === 'superHard') spawnRate = 0.03;
+            else if (selectedDifficulty === 'impossible') spawnRate = 0.05;
+            else if (selectedDifficulty === 'ledianModus') spawnRate = 0.12; // Much higher spawn rate
+            else spawnRate = 0.02; // Hard mode
+
+            if (Math.random() < spawnRate * difficulty) createAsteroid();
+            if (orbs.length < 1 && (selectedDifficulty !== 'impossible' || orbs.length === 0)) createOrb();
+            else if (selectedDifficulty === 'impossible' && orbs.length === 0) {
+                for (let i = 0; i < 3; i++) createOrb();
+            }
+
+            if (asteroidSpawnDelay > 0) asteroidSpawnDelay -= 1 / 60; // Assuming 60 FPS
+            difficulty += selectedDifficulty === 'ledianModus' ? 0.0015 : 0.0005; // Even faster difficulty increase
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        function startGame() {
+            gameRunning = true;
+            score = 0;
+            difficulty = 1;
+            scoreDisplay.textContent = `Score: ${score}`;
+            player.x = canvas.width / 2;
+            player.y = canvas.height / 2;
+            player.radius = selectedDifficulty === 'impossible' ? 25 : selectedDifficulty === 'ledianModus' ? 30 : 20; // Largest in Ledian Modus
+            orbs.length = 0;
+            asteroids.length = 0;
+            if (selectedDifficulty === 'ledianModus') {
+                createOrb(); // Only one orb at start
+            } else {
+                for (let i = 0; i < 3; i++) createOrb();
+            }
+            startScreen.style.display = 'none';
+            gameOverScreen.style.display = 'none';
+            difficultyScreen.style.display = 'none';
+            asteroidSpawnDelay = selectedDifficulty === 'normal' ? 15 : 0;
+            endGameButton.style.display = selectedDifficulty === 'peaceful' ? 'block' : 'none';
+            requestAnimationFrame(gameLoop);
+        }
+
+        function endGame() {
+            gameRunning = false;
+            finalScore.textContent = score;
+            gameOverScreen.style.display = 'block';
+            endGameButton.style.display = 'none';
+        }
+
+        function showDifficultyScreen() {
+            gameRunning = false;
+            difficultyScreen.style.display = 'block';
+            startScreen.style.display = 'none';
+            gameOverScreen.style.display = 'none';
+            endGameButton.style.display = 'none';
+        }
+
+        function showStartScreen() {
+            startScreen.style.display = 'block';
+            gameOverScreen.style.display = 'none';
+            difficultyScreen.style.display = 'none';
+            endGameButton.style.display = 'none';
+        }
+
+        document.addEventListener('keydown', e => {
+            keys[e.key.toLowerCase()] = true;
+            if (e.key === 'Enter') {
+                if (startScreen.style.display === 'block') {
+                    startGame();
+                } else if (gameOverScreen.style.display === 'block') {
+                    showStartScreen();
+                }
+            }
+            updateMovement();
+        });
+
+        document.addEventListener('keyup', e => {
+            keys[e.key.toLowerCase()] = false;
+            updateMovement();
+        });
+
+        function updateMovement() {
+            player.dx = 0;
+            player.dy = 0;
+
+            if (keys['arrowleft'] || keys['a']) {
+                if (!keys['arrowright'] && !keys['d']) player.dx = -player.speed;
+            } else if (keys['arrowright'] || keys['d']) {
+                player.dx = player.speed;
+            }
+
+            if (keys['arrowup'] || keys['w']) {
+                if (!keys['arrowdown'] && !keys['s']) player.dy = -player.speed;
+            } else if (keys['arrowdown'] || keys['s']) {
+                player.dy = player.speed;
+            }
+        }
+
+        peacefulButton.addEventListener('click', () => {
+            selectedDifficulty = 'peaceful';
+            startScreen.style.display = 'block';
+            difficultyScreen.style.display = 'none';
+        });
+        normalButton.addEventListener('click', () => {
+            selectedDifficulty = 'normal';
+            startScreen.style.display = 'block';
+            difficultyScreen.style.display = 'none';
+        });
+        hardButton.addEventListener('click', () => {
+            selectedDifficulty = 'hard';
+            startScreen.style.display = 'block';
+            difficultyScreen.style.display = 'none';
+        });
+        superHardButton.addEventListener('click', () => {
+            selectedDifficulty = 'superHard';
+            startScreen.style.display = 'block';
+            difficultyScreen.style.display = 'none';
+        });
+        impossibleButton.addEventListener('click', () => {
+            selectedDifficulty = 'impossible';
+            startScreen.style.display = 'block';
+            difficultyScreen.style.display = 'none';
+        });
+        ledianModusButton.addEventListener('click', () => {
+            selectedDifficulty = 'ledianModus';
+            startScreen.style.display = 'block';
+            difficultyScreen.style.display = 'none';
+        });
+
+        startButton.addEventListener('click', startGame);
+        retryButton.addEventListener('click', showStartScreen);
+        changeDifficultyButton.addEventListener('click', showDifficultyScreen);
+        endGameButton.addEventListener('click', showDifficultyScreen);
+
+        showDifficultyScreen();
+    </script>
+</body>
+</html>
