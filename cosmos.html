@@ -114,12 +114,13 @@
         let difficulty = 1;
         let selectedDifficulty = 'hard';
         let asteroidSpawnDelay = 0;
+        let lastTime = 0; // For delta-time calculation
 
         const player = {
             x: canvas.width / 2,
             y: canvas.height / 2,
             radius: 20,
-            speed: 5,
+            speed: 495, // Pixels per second (5 * 60 for 60 FPS equivalence)
             dx: 0,
             dy: 0
         };
@@ -135,55 +136,55 @@
         }
 
         function createAsteroid() {
-            if (selectedDifficulty === 'peaceful') return; // No asteroids in Peaceful mode
-            if (asteroidSpawnDelay > 0) return; // Delay for Normal mode
+            if (selectedDifficulty === 'peaceful') return;
+            if (asteroidSpawnDelay > 0) return;
 
             const edge = Math.floor(Math.random() * 4);
             let isFast;
             if (selectedDifficulty === 'normal') {
-                isFast = Math.random() < 0.3; // 30% chance for fast asteroids
+                isFast = Math.random() < 0.3;
             } else if (selectedDifficulty === 'superHard') {
-                isFast = Math.random() < 0.7; // 70% chance for fast asteroids
+                isFast = Math.random() < 0.7;
             } else if (selectedDifficulty === 'impossible') {
-                isFast = Math.random() < 0.9; // 90% chance for fast asteroids
+                isFast = Math.random() < 0.9;
             } else if (selectedDifficulty === 'ledianModus') {
-                isFast = Math.random() < 0.95; // 95% chance for fast asteroids
+                isFast = Math.random() < 0.95;
             } else {
-                isFast = Math.random() < 0.5; // 50% chance for Hard mode
+                isFast = Math.random() < 0.5;
             }
 
             let x, y, dx, dy, radius, color, speedMultiplier;
 
             if (isFast) {
-                radius = selectedDifficulty === 'ledianModus' ? 8 : 10; // Smaller fast asteroids in Ledian Modus
+                radius = selectedDifficulty === 'ledianModus' ? 8 : 10;
                 color = '#ff6666';
-                speedMultiplier = selectedDifficulty === 'ledianModus' ? 5 : 3; // Even faster in Ledian Modus
+                speedMultiplier = selectedDifficulty === 'ledianModus' ? 300 : 180; // 5 * 60 or 3 * 60
             } else {
                 radius = 20;
                 color = '#990000';
-                speedMultiplier = selectedDifficulty === 'ledianModus' ? 2.5 : 1.5; // Faster in Ledian Modus
+                speedMultiplier = selectedDifficulty === 'ledianModus' ? 150 : 90; // 2.5 * 60 or 1.5 * 60
             }
 
             if (edge === 0) { // Top
                 x = Math.random() * canvas.width;
                 y = -radius;
-                dx = (Math.random() - 0.5) * 4 * difficulty * speedMultiplier;
-                dy = Math.random() * 2 * difficulty * speedMultiplier + 2;
+                dx = (Math.random() - 0.5) * 240 * difficulty * speedMultiplier / 60; // 4 * 60
+                dy = Math.random() * 120 * difficulty * speedMultiplier / 60 + 120; // 2 * 60
             } else if (edge === 1) { // Right
                 x = canvas.width + radius;
                 y = Math.random() * canvas.height;
-                dx = -(Math.random() * 2 * difficulty * speedMultiplier + 2);
-                dy = (Math.random() - 0.5) * 4 * difficulty * speedMultiplier;
+                dx = -(Math.random() * 120 * difficulty * speedMultiplier / 60 + 120);
+                dy = (Math.random() - 0.5) * 240 * difficulty * speedMultiplier / 60;
             } else if (edge === 2) { // Bottom
                 x = Math.random() * canvas.width;
                 y = canvas.height + radius;
-                dx = (Math.random() - 0.5) * 4 * difficulty * speedMultiplier;
-                dy = -(Math.random() * 2 * difficulty * speedMultiplier + 2);
+                dx = (Math.random() - 0.5) * 240 * difficulty * speedMultiplier / 60;
+                dy = -(Math.random() * 120 * difficulty * speedMultiplier / 60 + 120);
             } else { // Left
                 x = -radius;
                 y = Math.random() * canvas.height;
-                dx = Math.random() * 2 * difficulty * speedMultiplier + 2;
-                dy = (Math.random() - 0.5) * 4 * difficulty * speedMultiplier;
+                dx = Math.random() * 120 * difficulty * speedMultiplier / 60 + 120;
+                dy = (Math.random() - 0.5) * 240 * difficulty * speedMultiplier / 60;
             }
             asteroids.push({ x, y, radius, dx, dy, color });
         }
@@ -218,9 +219,9 @@
             });
         }
 
-        function updatePlayer() {
-            player.x += player.dx;
-            player.y += player.dy;
+        function updatePlayer(deltaTime) {
+            player.x += player.dx * deltaTime;
+            player.y += player.dy * deltaTime;
 
             if (player.x < player.radius) player.x = player.radius;
             if (player.x > canvas.width - player.radius) player.x = canvas.width - player.radius;
@@ -239,17 +240,17 @@
                     score += 10;
                     scoreDisplay.textContent = `Score: ${score}`;
                     if (selectedDifficulty === 'ledianModus' || selectedDifficulty !== 'impossible') {
-                        createOrb(); // Respawn orb in Ledian Modus
+                        createOrb();
                     }
                 }
             }
         }
 
-        function updateAsteroids() {
+        function updateAsteroids(deltaTime) {
             for (let i = asteroids.length - 1; i >= 0; i--) {
                 const asteroid = asteroids[i];
-                asteroid.x += asteroid.dx;
-                asteroid.y += asteroid.dy;
+                asteroid.x += asteroid.dx * deltaTime;
+                asteroid.y += asteroid.dy * deltaTime;
 
                 const dx = player.x - asteroid.x;
                 const dy = player.y - asteroid.y;
@@ -269,11 +270,14 @@
         function gameLoop(timestamp) {
             if (!gameRunning) return;
 
+            const deltaTime = (timestamp - lastTime) / 1000; // Convert to seconds
+            lastTime = timestamp;
+
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            updatePlayer();
+            updatePlayer(deltaTime);
             updateOrbs();
-            updateAsteroids();
+            updateAsteroids(deltaTime);
             drawPlayer();
             drawOrbs();
             drawAsteroids();
@@ -282,17 +286,17 @@
             if (selectedDifficulty === 'normal') spawnRate = 0.01;
             else if (selectedDifficulty === 'superHard') spawnRate = 0.03;
             else if (selectedDifficulty === 'impossible') spawnRate = 0.05;
-            else if (selectedDifficulty === 'ledianModus') spawnRate = 0.12; // Much higher spawn rate
-            else spawnRate = 0.02; // Hard mode
+            else if (selectedDifficulty === 'ledianModus') spawnRate = 0.12;
+            else spawnRate = 0.02;
 
-            if (Math.random() < spawnRate * difficulty) createAsteroid();
+            if (Math.random() < spawnRate * difficulty * deltaTime * 60) createAsteroid();
             if (orbs.length < 1 && (selectedDifficulty !== 'impossible' || orbs.length === 0)) createOrb();
             else if (selectedDifficulty === 'impossible' && orbs.length === 0) {
                 for (let i = 0; i < 3; i++) createOrb();
             }
 
-            if (asteroidSpawnDelay > 0) asteroidSpawnDelay -= 1 / 60; // Assuming 60 FPS
-            difficulty += selectedDifficulty === 'ledianModus' ? 0.0015 : 0.0005; // Even faster difficulty increase
+            if (asteroidSpawnDelay > 0) asteroidSpawnDelay -= deltaTime;
+            difficulty += (selectedDifficulty === 'ledianModus' ? 0.0015 : 0.0005) * deltaTime * 60;
 
             requestAnimationFrame(gameLoop);
         }
@@ -304,19 +308,20 @@
             scoreDisplay.textContent = `Score: ${score}`;
             player.x = canvas.width / 2;
             player.y = canvas.height / 2;
-            player.radius = selectedDifficulty === 'impossible' ? 25 : selectedDifficulty === 'ledianModus' ? 30 : 20; // Largest in Ledian Modus
+            player.radius = selectedDifficulty === 'impossible' ? 25 : selectedDifficulty === 'ledianModus' ? 30 : 20;
             orbs.length = 0;
             asteroids.length = 0;
             if (selectedDifficulty === 'ledianModus') {
-                createOrb(); // Only one orb at start
+                createOrb();
             } else {
                 for (let i = 0; i < 3; i++) createOrb();
             }
             startScreen.style.display = 'none';
             gameOverScreen.style.display = 'none';
             difficultyScreen.style.display = 'none';
-            asteroidSpawnDelay = selectedDifficulty === 'normal' ? 15 : 0;
+            asteroidSpawnDelay = selectedDifficulty === 'normal' ? 15 : 0; // In seconds
             endGameButton.style.display = selectedDifficulty === 'peaceful' ? 'block' : 'none';
+            lastTime = performance.now();
             requestAnimationFrame(gameLoop);
         }
 
