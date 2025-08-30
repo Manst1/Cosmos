@@ -223,6 +223,12 @@
         .modal-btn.secondary:hover {
             background: linear-gradient(to bottom, #334155, #1e293b);
         }
+        #emptyNameWarning {
+            color: #ff6b6b;
+            font-size: 14px;
+            margin-top: 5px;
+            display: none;
+        }
     </style>
 </head>
 <body>
@@ -255,6 +261,7 @@
             New High Score! Enter your name:
             <input type="text" id="playerNameInput" class="text-black p-2 rounded mt-2" maxlength="15" placeholder="Your name">
             <button id="saveHighScoreButton" class="modal-btn bg-yellow-500 hover:bg-yellow-600 text-black">Save</button>
+            <div id="emptyNameWarning">Please enter a name</div>
         </div>
         <div class="flex justify-center flex-wrap">
             <button id="retryButton" class="modal-btn">Retry</button>
@@ -323,6 +330,7 @@
         const newHighScoreMessage = document.getElementById('newHighScoreMessage');
         const playerNameInput = document.getElementById('playerNameInput');
         const saveHighScoreButton = document.getElementById('saveHighScoreButton');
+        const emptyNameWarning = document.getElementById('emptyNameWarning');
         const difficultyTabs = document.querySelectorAll('.difficulty-tab');
 
         let score = 0;
@@ -345,6 +353,18 @@
         const orbs = [];
         const asteroids = [];
         const keys = {};
+
+        // Function to get last used player name from localStorage
+        function getLastPlayerName() {
+            return localStorage.getItem('lastPlayerName') || '';
+        }
+
+        // Function to save player name to localStorage
+        function savePlayerName(name) {
+            if (name && name.trim() !== '') {
+                localStorage.setItem('lastPlayerName', name);
+            }
+        }
 
         // Function to format date in DD.MM.YYYY HH:MM:SS format
         function formatDateStandard(timestamp) {
@@ -381,10 +401,61 @@
                 } else {
                     // Check if score is higher than the lowest high score
                     const lowestScoreSnapshot = await highScoresRef.orderByChild('score').limitToFirst(1).once('value');
+                    let lowestScore = 0;
                     lowestScoreSnapshot.forEach(childSnapshot => {
                         const childData = childSnapshot.val();
-                        if (score > childData.score) isHighScore = true;
+                        lowestScore = childData.score;
                     });
+                    
+                    if (score > lowestScore) {
+                        isHighScore = true;
+                    } else if (score === lowestScore) {
+                        // If score is equal to the lowest score, check if there are multiple scores with this value
+                        // and if we're already at the maximum of 25 scores
+                        const scoresWithSameValue = [];
+                        snapshot.forEach(childSnapshot => {
+                            const childData = childSnapshot.val();
+                            if (childData.score === score) {
+                                scoresWithSameValue.push(childData);
+                            }
+                        });
+                        
+                        // If we have less than 25 scores, we can add this one
+                        if (count < 25) {
+                            isHighScore = true;
+                        }
+                        // Otherwise, if we have exactly 25 scores but there are multiple with the same value as the lowest,
+                        // we need to check if this score would actually make it to the leaderboard
+                        else if (scoresWithSameValue.length > 0) {
+                            // Get all scores to check the ranking
+                            const allScores = [];
+                            snapshot.forEach(childSnapshot => {
+                                allScores.push({
+                                    id: childSnapshot.key,
+                                    score: childSnapshot.val().score,
+                                    timestamp: childSnapshot.val().timestamp
+                                });
+                            });
+                            
+                            // Sort by score descending, then by timestamp ascending (older scores first)
+                            allScores.sort((a, b) => {
+                                if (b.score !== a.score) {
+                                    return b.score - a.score;
+                                }
+                                return a.timestamp - b.timestamp;
+                            });
+                            
+                            // Check if our score would be in the top 25
+                            // Since we have the same score as the lowest, we need to check if our timestamp is newer
+                            // (which would mean we don't make it to the leaderboard)
+                            const lowestScoreEntry = allScores[allScores.length - 1];
+                            if (lowestScoreEntry.score === score) {
+                                // Our score is the same as the lowest, so we only make it if our timestamp is older
+                                // (meaning we achieved it earlier)
+                                isHighScore = Date.now() <= lowestScoreEntry.timestamp;
+                            }
+                        }
+                    }
                 }
                 
                 return isHighScore;
@@ -404,21 +475,31 @@
                     timestamp: Date.now()
                 });
                 
-                // If we have more than 25 scores, remove the lowest one
+                // If we have more than 25 scores, remove the lowest one(s)
                 const snapshot = await highScoresRef.orderByChild('score').once('value');
                 const scores = [];
                 snapshot.forEach(childSnapshot => {
                     scores.push({
                         id: childSnapshot.key,
-                        score: childSnapshot.val().score
+                        score: childSnapshot.val().score,
+                        timestamp: childSnapshot.val().timestamp
                     });
                 });
                 
                 if (scores.length > 25) {
-                    // Sort by score ascending and remove the lowest
-                    scores.sort((a, b) => a.score - b.score);
-                    const toRemove = scores[0];
-                    await highScoresRef.child(toRemove.id).remove();
+                    // Sort by score ascending, then by timestamp descending (newer scores first for same score)
+                    scores.sort((a, b) => {
+                        if (a.score !== b.score) {
+                            return a.score - b.score;
+                        }
+                        return b.timestamp - a.timestamp;
+                    });
+                    
+                    // Remove the lowest scores until we have exactly 25
+                    while (scores.length > 25) {
+                        const toRemove = scores.shift();
+                        await highScoresRef.child(toRemove.id).remove();
+                    }
                 }
                 
                 return true;
@@ -446,8 +527,13 @@
                     });
                 });
                 
-                // Sort descending by score
-                return scores.sort((a, b) => b.score - a.score);
+                // Sort descending by score, then by timestamp (older scores first for same score)
+                return scores.sort((a, b) => {
+                    if (b.score !== a.score) {
+                        return b.score - a.score;
+                    }
+                    return a.timestamp - b.timestamp;
+                });
             } catch (error) {
                 console.error("Error getting high scores:", error);
                 return [];
@@ -684,6 +770,8 @@
                 
                 if (isNewHighScore) {
                     newHighScoreMessage.style.display = 'block';
+                    // Pre-fill with last used name
+                    playerNameInput.value = getLastPlayerName();
                     playerNameInput.focus();
                 } else {
                     newHighScoreMessage.style.display = 'none';
@@ -694,6 +782,7 @@
             
             gameOverScreen.style.display = 'block';
             endGameButton.style.display = 'none';
+            emptyNameWarning.style.display = 'none';
         }
 
         function showDifficultyScreen() {
@@ -743,13 +832,19 @@
 
         document.addEventListener('keydown', e => {
             keys[e.key.toLowerCase()] = true;
+            
+            // Handle Enter key in high score input
             if (e.key === 'Enter') {
-                if (startScreen.style.display === 'block') {
+                if (newHighScoreMessage.style.display === 'block') {
+                    // Try to save the high score when Enter is pressed
+                    saveHighScoreButton.click();
+                } else if (startScreen.style.display === 'block') {
                     startGame();
                 } else if (gameOverScreen.style.display === 'block') {
                     showStartScreen();
                 }
             }
+            
             updateMovement();
         });
 
@@ -819,14 +914,20 @@
             if (name) {
                 const saved = await saveHighScore(name, score, selectedDifficulty);
                 if (saved) {
+                    // Save the name to localStorage
+                    savePlayerName(name);
+                    
+                    // Hide the high score message without showing an alert
                     newHighScoreMessage.style.display = 'none';
                     playerNameInput.value = '';
-                    alert('High score saved!');
-                } else {
-                    alert('Error saving high score. Please try again.');
+                    emptyNameWarning.style.display = 'none';
+                    
+                    // Show the start screen
+                    showStartScreen();
                 }
             } else {
-                alert('Please enter your name');
+                // Show warning if name is empty
+                emptyNameWarning.style.display = 'block';
             }
         });
 
