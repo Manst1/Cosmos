@@ -89,6 +89,16 @@
             margin: 15px 0;
             width: 100%;
         }
+        .high-score-header {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px;
+            border-bottom: 2px solid #00ccff;
+            background: rgba(30, 30, 60, 0.8);
+            margin-bottom: 5px;
+            border-radius: 5px;
+            font-weight: bold;
+        }
         .high-score-item {
             display: flex;
             justify-content: space-between;
@@ -123,6 +133,25 @@
             min-width: 150px;
             text-align: right;
             margin-left: 15px;
+        }
+        .header-rank {
+            min-width: 40px;
+            text-align: center;
+        }
+        .header-name {
+            flex-grow: 1;
+            text-align: left;
+        }
+        .header-score {
+            min-width: 60px;
+            text-align: right;
+            color: #00ffcc;
+        }
+        .header-date {
+            min-width: 150px;
+            text-align: right;
+            margin-left: 15px;
+            color: #94a3b8;
         }
         .difficulty-tabs {
             display: flex;
@@ -242,6 +271,12 @@
             <div class="difficulty-tab" data-difficulty="impossible">Impossible</div>
             <div class="difficulty-tab" data-difficulty="ledianModus">Ledian Modus</div>
         </div>
+        <div class="high-score-header">
+            <div class="header-rank">#</div>
+            <div class="header-name">Name</div>
+            <div class="header-score">Score</div>
+            <div class="header-date">Date & Time</div>
+        </div>
         <div id="highScoreList"></div>
         <button id="backFromHighScoresButton" class="modal-btn secondary">Back</button>
     </div>
@@ -311,6 +346,19 @@
         const asteroids = [];
         const keys = {};
 
+        // Function to format date in DD.MM.YYYY HH:MM:SS format
+        function formatDateStandard(timestamp) {
+            const date = new Date(timestamp);
+            const day = String(date.getDate()).padStart(2, '0');
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const year = date.getFullYear();
+            const hours = String(date.getHours()).padStart(2, '0');
+            const minutes = String(date.getMinutes()).padStart(2, '0');
+            const seconds = String(date.getSeconds()).padStart(2, '0');
+            
+            return `${day}.${month}.${year} ${hours}:${minutes}:${seconds}`;
+        }
+
         // High score functions
         async function checkHighScore(score, difficulty) {
             try {
@@ -353,9 +401,7 @@
                 await newScoreRef.set({
                     name: name.substring(0, 15),
                     score: score,
-                    timestamp: Date.now(),
-                    date: new Date().toLocaleDateString(),
-                    time: new Date().toLocaleTimeString()
+                    timestamp: Date.now()
                 });
                 
                 // If we have more than 25 scores, remove the lowest one
@@ -389,9 +435,14 @@
                 
                 const scores = [];
                 snapshot.forEach(childSnapshot => {
+                    const data = childSnapshot.val();
                     scores.push({
                         id: childSnapshot.key,
-                        ...childSnapshot.val()
+                        name: data.name,
+                        score: data.score,
+                        timestamp: data.timestamp,
+                        // Use our standardized date format
+                        date: formatDateStandard(data.timestamp)
                     });
                 });
                 
@@ -405,7 +456,7 @@
 
         function displayHighScores(scores) {
             if (scores.length === 0) {
-                highScoreList.innerHTML = '<p class="text-lg">No high scores yet!</p>';
+                highScoreList.innerHTML = '<p class="text-lg mt-4">No high scores yet!</p>';
                 return;
             }
             
@@ -417,7 +468,7 @@
                         <div class="high-score-rank">${index + 1}</div>
                         <div class="high-score-name">${score.name}</div>
                         <div class="high-score-value">${score.score}</div>
-                        <div class="high-score-date">${score.date} ${score.time}</div>
+                        <div class="high-score-date">${score.date}</div>
                     </div>
                 `;
             });
