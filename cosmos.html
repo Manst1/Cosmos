@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cosmos</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Add Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     <style>
         body {
             background: linear-gradient(to bottom, #1a1a3d, #2a2a5e);
@@ -21,7 +24,7 @@
             border-radius: 10px;
             box-shadow: 0 0 20px rgba(255, 255, 255, 0.2);
         }
-        #gameOverScreen, #startScreen, #difficultyScreen {
+        #gameOverScreen, #startScreen, #difficultyScreen, #highScoreScreen {
             position: absolute;
             background: rgba(0, 0, 0, 0.8);
             color: white;
@@ -29,6 +32,10 @@
             border-radius: 10px;
             text-align: center;
             display: none;
+            max-height: 80vh;
+            overflow-y: auto;
+            width: 80%;
+            max-width: 500px;
         }
         #scoreDisplay {
             position: absolute;
@@ -64,6 +71,41 @@
         #endGameButton:hover {
             background-color: #dc2626;
         }
+        .high-score-list {
+            list-style-type: none;
+            padding: 0;
+            margin: 15px 0;
+        }
+        .high-score-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px;
+            border-bottom: 1px solid #333;
+        }
+        .high-score-rank {
+            font-weight: bold;
+            margin-right: 10px;
+        }
+        .high-score-name {
+            flex-grow: 1;
+            text-align: left;
+        }
+        .high-score-value {
+            font-weight: bold;
+            color: #00ffcc;
+        }
+        #highScoreTable {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+        }
+        #highScoreTable th, #highScoreTable td {
+            padding: 8px;
+            border-bottom: 1px solid #333;
+        }
+        #highScoreTable th {
+            color: #00ccff;
+        }
     </style>
 </head>
 <body>
@@ -77,26 +119,66 @@
         <button id="superHardButton" class="difficulty-btn text-white font-bold py-2 px-4 rounded">Super Hard</button><br>
         <button id="impossibleButton" class="difficulty-btn text-white font-bold py-2 px-4 rounded">Impossible</button><br>
         <button id="ledianModusButton" class="difficulty-btn text-white font-bold py-2 px-4 rounded">Ledian Modus</button>
+        <br><br>
+        <button id="viewHighScoresButton" class="bg-purple-500 hover:bg-purple-600 text-white font-bold py-2 px-4 rounded">View High Scores</button>
     </div>
     <div id="startScreen">
         <h1 class="text-4xl font-bold mb-4 text-cyan-300">Cosmic Collector</h1>
         <p class="text-lg mb-4">Use arrow keys or WASD to move your spaceship.<br>Collect energy orbs (blue) to score points.<br>Avoid asteroids (bright red are fast, dark red are slow)!</p>
         <button id="startButton" class="bg-cyan-500 hover:bg-cyan-600 text-white font-bold py-2 px-4 rounded">Start Game</button>
+        <br><br>
+        <button id="startToHighScoresButton" class="bg-purple-500 hover:bg-purple-600 text-white font-bold py-2 px-4 rounded">View High Scores</button>
     </div>
     <div id="gameOverScreen">
         <h1 class="text-4xl font-bold mb-4 text-cyan-300">Game Over</h1>
         <p class="text-lg mb-4">Final Score: <span id="finalScore">0</span></p>
+        <div id="newHighScoreMessage" class="text-yellow-300 text-xl font-bold mb-4" style="display: none;">
+            New High Score! Enter your name:
+            <input type="text" id="playerNameInput" class="text-black p-2 rounded mt-2" maxlength="15" placeholder="Your name">
+            <button id="saveHighScoreButton" class="bg-yellow-500 hover:bg-yellow-600 text-black font-bold py-1 px-3 rounded ml-2">Save</button>
+        </div>
         <button id="retryButton" class="bg-cyan-500 hover:bg-cyan-600 text-white font-bold py-2 px-4 rounded mr-2">Retry</button>
         <button id="changeDifficultyButton" class="bg-cyan-500 hover:bg-cyan-600 text-white font-bold py-2 px-4 rounded">Change Difficulty</button>
+        <br><br>
+        <button id="gameOverToHighScoresButton" class="bg-purple-500 hover:bg-purple-600 text-white font-bold py-2 px-4 rounded">View High Scores</button>
+    </div>
+    <div id="highScoreScreen">
+        <h1 class="text-4xl font-bold mb-4 text-cyan-300">High Scores</h1>
+        <select id="highScoreDifficultySelect" class="text-black p-2 rounded mb-4">
+            <option value="peaceful">Peaceful</option>
+            <option value="normal">Normal</option>
+            <option value="hard" selected>Hard</option>
+            <option value="superHard">Super Hard</option>
+            <option value="impossible">Impossible</option>
+            <option value="ledianModus">Ledian Modus</option>
+        </select>
+        <div id="highScoreList"></div>
+        <button id="backFromHighScoresButton" class="bg-cyan-500 hover:bg-cyan-600 text-white font-bold py-2 px-4 rounded mt-4">Back</button>
     </div>
     <button id="endGameButton">Spiel beenden</button>
     <script>
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyCYBWU0IHCJjNAqkolKubG53LjJGFgXLHM",
+            authDomain: "cosmos-hs.firebaseapp.com",
+            databaseURL: "https://cosmos-hs-default-rtdb.europe-west1.firebasedatabase.app",
+            projectId: "cosmos-hs",
+            storageBucket: "cosmos-hs.firebasestorage.app",
+            messagingSenderId: "377398562660",
+            appId: "1:377398562660:web:b27831050fd9eed3363471"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
         const scoreDisplay = document.getElementById('scoreDisplay');
         const startScreen = document.getElementById('startScreen');
         const gameOverScreen = document.getElementById('gameOverScreen');
         const difficultyScreen = document.getElementById('difficultyScreen');
+        const highScoreScreen = document.getElementById('highScoreScreen');
         const finalScore = document.getElementById('finalScore');
         const startButton = document.getElementById('startButton');
         const retryButton = document.getElementById('retryButton');
@@ -108,6 +190,15 @@
         const impossibleButton = document.getElementById('impossibleButton');
         const ledianModusButton = document.getElementById('ledianModusButton');
         const endGameButton = document.getElementById('endGameButton');
+        const viewHighScoresButton = document.getElementById('viewHighScoresButton');
+        const startToHighScoresButton = document.getElementById('startToHighScoresButton');
+        const gameOverToHighScoresButton = document.getElementById('gameOverToHighScoresButton');
+        const backFromHighScoresButton = document.getElementById('backFromHighScoresButton');
+        const highScoreDifficultySelect = document.getElementById('highScoreDifficultySelect');
+        const highScoreList = document.getElementById('highScoreList');
+        const newHighScoreMessage = document.getElementById('newHighScoreMessage');
+        const playerNameInput = document.getElementById('playerNameInput');
+        const saveHighScoreButton = document.getElementById('saveHighScoreButton');
 
         let score = 0;
         let gameRunning = false;
@@ -115,6 +206,7 @@
         let selectedDifficulty = 'hard';
         let asteroidSpawnDelay = 0;
         let lastTime = 0; // For delta-time calculation
+        let isNewHighScore = false;
 
         const player = {
             x: canvas.width / 2,
@@ -128,6 +220,92 @@
         const orbs = [];
         const asteroids = [];
         const keys = {};
+
+        // High score functions
+        async function checkHighScore(score, difficulty) {
+            try {
+                const highScoresRef = database.ref(`highscores/${difficulty}`);
+                const snapshot = await highScoresRef.orderByChild('score').limitToLast(10).once('value');
+                
+                let isHighScore = false;
+                let lowestHighScore = 0;
+                let count = 0;
+                
+                snapshot.forEach(childSnapshot => {
+                    count++;
+                    const childData = childSnapshot.val();
+                    if (count === 1) lowestHighScore = childData.score;
+                    if (score > childData.score) isHighScore = true;
+                });
+                
+                // If there are fewer than 10 scores, any score is a high score
+                if (count < 10 && score > 0) isHighScore = true;
+                
+                return isHighScore;
+            } catch (error) {
+                console.error("Error checking high scores:", error);
+                return false;
+            }
+        }
+
+        async function saveHighScore(name, score, difficulty) {
+            try {
+                const highScoresRef = database.ref(`highscores/${difficulty}`);
+                const newScoreRef = highScoresRef.push();
+                await newScoreRef.set({
+                    name: name.substring(0, 15),
+                    score: score,
+                    timestamp: Date.now()
+                });
+                return true;
+            } catch (error) {
+                console.error("Error saving high score:", error);
+                return false;
+            }
+        }
+
+        async function getHighScores(difficulty) {
+            try {
+                const highScoresRef = database.ref(`highscores/${difficulty}`);
+                const snapshot = await highScoresRef.orderByChild('score').limitToLast(10).once('value');
+                
+                const scores = [];
+                snapshot.forEach(childSnapshot => {
+                    scores.push({
+                        id: childSnapshot.key,
+                        ...childSnapshot.val()
+                    });
+                });
+                
+                // Sort descending by score
+                return scores.sort((a, b) => b.score - a.score);
+            } catch (error) {
+                console.error("Error getting high scores:", error);
+                return [];
+            }
+        }
+
+        function displayHighScores(scores) {
+            if (scores.length === 0) {
+                highScoreList.innerHTML = '<p class="text-lg">No high scores yet!</p>';
+                return;
+            }
+            
+            let html = '<table id="highScoreTable" class="w-full"><tr><th>Rank</th><th>Name</th><th>Score</th></tr>';
+            
+            scores.forEach((score, index) => {
+                html += `
+                    <tr>
+                        <td class="text-center">${index + 1}</td>
+                        <td>${score.name}</td>
+                        <td class="text-center">${score.score}</td>
+                    </tr>
+                `;
+            });
+            
+            html += '</table>';
+            highScoreList.innerHTML = html;
+        }
 
         function createOrb() {
             const x = Math.random() * canvas.width;
@@ -301,7 +479,7 @@
             requestAnimationFrame(gameLoop);
         }
 
-        function startGame() {
+        async function startGame() {
             gameRunning = true;
             score = 0;
             difficulty = 1;
@@ -319,15 +497,27 @@
             startScreen.style.display = 'none';
             gameOverScreen.style.display = 'none';
             difficultyScreen.style.display = 'none';
+            highScoreScreen.style.display = 'none';
             asteroidSpawnDelay = selectedDifficulty === 'normal' ? 15 : 0; // In seconds
             endGameButton.style.display = selectedDifficulty === 'peaceful' ? 'block' : 'none';
             lastTime = performance.now();
             requestAnimationFrame(gameLoop);
         }
 
-        function endGame() {
+        async function endGame() {
             gameRunning = false;
             finalScore.textContent = score;
+            
+            // Check if this is a new high score
+            isNewHighScore = await checkHighScore(score, selectedDifficulty);
+            
+            if (isNewHighScore) {
+                newHighScoreMessage.style.display = 'block';
+                playerNameInput.focus();
+            } else {
+                newHighScoreMessage.style.display = 'none';
+            }
+            
             gameOverScreen.style.display = 'block';
             endGameButton.style.display = 'none';
         }
@@ -337,6 +527,7 @@
             difficultyScreen.style.display = 'block';
             startScreen.style.display = 'none';
             gameOverScreen.style.display = 'none';
+            highScoreScreen.style.display = 'none';
             endGameButton.style.display = 'none';
         }
 
@@ -344,7 +535,22 @@
             startScreen.style.display = 'block';
             gameOverScreen.style.display = 'none';
             difficultyScreen.style.display = 'none';
+            highScoreScreen.style.display = 'none';
             endGameButton.style.display = 'none';
+        }
+
+        async function showHighScoreScreen() {
+            gameRunning = false;
+            highScoreScreen.style.display = 'block';
+            startScreen.style.display = 'none';
+            gameOverScreen.style.display = 'none';
+            difficultyScreen.style.display = 'none';
+            endGameButton.style.display = 'none';
+            
+            // Load high scores for the selected difficulty
+            const difficulty = highScoreDifficultySelect.value;
+            const scores = await getHighScores(difficulty);
+            displayHighScores(scores);
         }
 
         document.addEventListener('keydown', e => {
@@ -416,7 +622,35 @@
         retryButton.addEventListener('click', showStartScreen);
         changeDifficultyButton.addEventListener('click', showDifficultyScreen);
         endGameButton.addEventListener('click', showDifficultyScreen);
+        
+        viewHighScoresButton.addEventListener('click', showHighScoreScreen);
+        startToHighScoresButton.addEventListener('click', showHighScoreScreen);
+        gameOverToHighScoresButton.addEventListener('click', showHighScoreScreen);
+        backFromHighScoresButton.addEventListener('click', showDifficultyScreen);
+        
+        highScoreDifficultySelect.addEventListener('change', async () => {
+            const difficulty = highScoreDifficultySelect.value;
+            const scores = await getHighScores(difficulty);
+            displayHighScores(scores);
+        });
+        
+        saveHighScoreButton.addEventListener('click', async () => {
+            const name = playerNameInput.value.trim();
+            if (name) {
+                const saved = await saveHighScore(name, score, selectedDifficulty);
+                if (saved) {
+                    newHighScoreMessage.style.display = 'none';
+                    playerNameInput.value = '';
+                    alert('High score saved!');
+                } else {
+                    alert('Error saving high score. Please try again.');
+                }
+            } else {
+                alert('Please enter your name');
+            }
+        });
 
+        // Initialize the game
         showDifficultyScreen();
     </script>
 </body>
