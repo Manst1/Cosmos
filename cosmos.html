@@ -26,16 +26,18 @@
         }
         #gameOverScreen, #startScreen, #difficultyScreen, #highScoreScreen {
             position: absolute;
-            background: rgba(0, 0, 0, 0.8);
+            background: rgba(0, 0, 0, 0.85);
             color: white;
-            padding: 20px;
-            border-radius: 10px;
+            padding: 25px;
+            border-radius: 15px;
             text-align: center;
             display: none;
             max-height: 80vh;
             overflow-y: auto;
-            width: 80%;
-            max-width: 500px;
+            width: 85%;
+            max-width: 700px;
+            box-shadow: 0 0 30px rgba(0, 200, 255, 0.3);
+            border: 1px solid #00ccff50;
         }
         #scoreDisplay {
             position: absolute;
@@ -44,55 +46,107 @@
             color: white;
             font-size: 24px;
             text-shadow: 0 0 5px #00ffcc;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 5px 15px;
+            border-radius: 20px;
         }
         .difficulty-btn {
-            background-color: #10b981;
-            margin: 5px;
-            padding: 10px 20px;
-            border-radius: 5px;
-            transition: background-color 0.3s;
+            background: linear-gradient(to bottom, #10b981, #059669);
+            margin: 8px;
+            padding: 12px 25px;
+            border-radius: 8px;
+            transition: all 0.3s;
+            min-width: 140px;
+            border: 1px solid #10b98180;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
         }
         .difficulty-btn:hover {
-            background-color: #059669;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 10px rgba(0, 0, 0, 0.3);
         }
         #endGameButton {
             position: absolute;
             bottom: 20px;
-            background-color: #ef4444;
+            background: linear-gradient(to bottom, #ef4444, #dc2626);
             color: white;
-            padding: 8px 16px;
-            border-radius: 5px;
+            padding: 10px 20px;
+            border-radius: 8px;
             font-size: 16px;
             font-weight: bold;
             cursor: pointer;
-            transition: background-color 0.3s;
+            transition: all 0.3s;
             display: none;
+            border: 1px solid #ef444480;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
         }
         #endGameButton:hover {
-            background-color: #dc2626;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 10px rgba(0, 0, 0, 0.3);
         }
         .high-score-list {
             list-style-type: none;
             padding: 0;
             margin: 15px 0;
+            width: 100%;
         }
         .high-score-item {
             display: flex;
             justify-content: space-between;
-            padding: 8px;
-            border-bottom: 1px solid #333;
+            padding: 10px;
+            border-bottom: 1px solid #334155;
+            background: rgba(30, 30, 60, 0.5);
+            margin-bottom: 5px;
+            border-radius: 5px;
         }
         .high-score-rank {
             font-weight: bold;
             margin-right: 10px;
+            color: #00ccff;
+            min-width: 40px;
+            text-align: center;
         }
         .high-score-name {
             flex-grow: 1;
             text-align: left;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
         .high-score-value {
             font-weight: bold;
             color: #00ffcc;
+            min-width: 60px;
+            text-align: right;
+        }
+        .high-score-date {
+            font-size: 0.8em;
+            color: #94a3b8;
+            min-width: 150px;
+            text-align: right;
+            margin-left: 15px;
+        }
+        .difficulty-tabs {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+            gap: 8px;
+        }
+        .difficulty-tab {
+            padding: 10px 20px;
+            background: #1e293b;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: 1px solid #334155;
+        }
+        .difficulty-tab.active {
+            background: #0f172a;
+            border-color: #00ccff;
+            color: #00ccff;
+            box-shadow: 0 0 10px rgba(0, 200, 255, 0.3);
+        }
+        .difficulty-tab:hover:not(.active) {
+            background: #334155;
         }
         #highScoreTable {
             width: 100%;
@@ -100,62 +154,100 @@
             margin: 15px 0;
         }
         #highScoreTable th, #highScoreTable td {
-            padding: 8px;
-            border-bottom: 1px solid #333;
+            padding: 10px;
+            border-bottom: 1px solid #334155;
+            text-align: left;
         }
         #highScoreTable th {
             color: #00ccff;
+            background: rgba(30, 30, 60, 0.5);
+        }
+        #highScoreTable tr:nth-child(even) {
+            background: rgba(30, 30, 60, 0.3);
+        }
+        #highScoreTable tr:hover {
+            background: rgba(0, 200, 255, 0.1);
+        }
+        .glowing-text {
+            text-shadow: 0 0 10px currentColor;
+        }
+        .modal-btn {
+            background: linear-gradient(to bottom, #0ea5e9, #0284c7);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin: 5px;
+            border: 1px solid #0ea5e980;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+        }
+        .modal-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 10px rgba(0, 0, 0, 0.3);
+            background: linear-gradient(to bottom, #0284c7, #0369a1);
+        }
+        .modal-btn.secondary {
+            background: linear-gradient(to bottom, #475569, #334155);
+        }
+        .modal-btn.secondary:hover {
+            background: linear-gradient(to bottom, #334155, #1e293b);
         }
     </style>
 </head>
 <body>
     <div id="scoreDisplay">Score: 0</div>
     <canvas id="gameCanvas" width="800" height="600"></canvas>
+    
     <div id="difficultyScreen">
-        <h1 class="text-4xl font-bold mb-4 text-cyan-300">Choose Difficulty</h1>
-        <button id="peacefulButton" class="difficulty-btn text-white font-bold py-2 px-4 rounded">Peaceful</button><br>
-        <button id="normalButton" class="difficulty-btn text-white font-bold py-2 px-4 rounded">Normal</button><br>
-        <button id="hardButton" class="difficulty-btn text-white font-bold py-2 px-4 rounded">Hard</button><br>
-        <button id="superHardButton" class="difficulty-btn text-white font-bold py-2 px-4 rounded">Super Hard</button><br>
-        <button id="impossibleButton" class="difficulty-btn text-white font-bold py-2 px-4 rounded">Impossible</button><br>
-        <button id="ledianModusButton" class="difficulty-btn text-white font-bold py-2 px-4 rounded">Ledian Modus</button>
-        <br><br>
-        <button id="viewHighScoresButton" class="bg-purple-500 hover:bg-purple-600 text-white font-bold py-2 px-4 rounded">View High Scores</button>
+        <h1 class="text-4xl font-bold mb-6 text-cyan-300 glowing-text">Choose Difficulty</h1>
+        <div class="flex flex-wrap justify-center gap-3 mb-6">
+            <button id="peacefulButton" class="difficulty-btn text-white font-bold py-2 px-4 rounded">Peaceful</button>
+            <button id="normalButton" class="difficulty-btn text-white font-bold py-2 px-4 rounded">Normal</button>
+            <button id="hardButton" class="difficulty-btn text-white font-bold py-2 px-4 rounded">Hard</button>
+            <button id="superHardButton" class="difficulty-btn text-white font-bold py-2 px-4 rounded">Super Hard</button>
+            <button id="impossibleButton" class="difficulty-btn text-white font-bold py-2 px-4 rounded">Impossible</button>
+            <button id="ledianModusButton" class="difficulty-btn text-white font-bold py-2 px-4 rounded">Ledian Modus</button>
+        </div>
+        <button id="viewHighScoresButton" class="modal-btn secondary">View High Scores</button>
     </div>
+    
     <div id="startScreen">
-        <h1 class="text-4xl font-bold mb-4 text-cyan-300">Cosmic Collector</h1>
-        <p class="text-lg mb-4">Use arrow keys or WASD to move your spaceship.<br>Collect energy orbs (blue) to score points.<br>Avoid asteroids (bright red are fast, dark red are slow)!</p>
-        <button id="startButton" class="bg-cyan-500 hover:bg-cyan-600 text-white font-bold py-2 px-4 rounded">Start Game</button>
-        <br><br>
-        <button id="startToHighScoresButton" class="bg-purple-500 hover:bg-purple-600 text-white font-bold py-2 px-4 rounded">View High Scores</button>
+        <h1 class="text-4xl font-bold mb-4 text-cyan-300 glowing-text">Cosmic Collector</h1>
+        <p class="text-lg mb-6">Use arrow keys or WASD to move your spaceship.<br>Collect energy orbs (blue) to score points.<br>Avoid asteroids (bright red are fast, dark red are slow)!</p>
+        <button id="startButton" class="modal-btn">Start Game</button>
     </div>
+    
     <div id="gameOverScreen">
-        <h1 class="text-4xl font-bold mb-4 text-cyan-300">Game Over</h1>
-        <p class="text-lg mb-4">Final Score: <span id="finalScore">0</span></p>
+        <h1 class="text-4xl font-bold mb-4 text-cyan-300 glowing-text">Game Over</h1>
+        <p class="text-lg mb-4">Final Score: <span id="finalScore" class="text-cyan-200">0</span></p>
         <div id="newHighScoreMessage" class="text-yellow-300 text-xl font-bold mb-4" style="display: none;">
             New High Score! Enter your name:
             <input type="text" id="playerNameInput" class="text-black p-2 rounded mt-2" maxlength="15" placeholder="Your name">
-            <button id="saveHighScoreButton" class="bg-yellow-500 hover:bg-yellow-600 text-black font-bold py-1 px-3 rounded ml-2">Save</button>
+            <button id="saveHighScoreButton" class="modal-btn bg-yellow-500 hover:bg-yellow-600 text-black">Save</button>
         </div>
-        <button id="retryButton" class="bg-cyan-500 hover:bg-cyan-600 text-white font-bold py-2 px-4 rounded mr-2">Retry</button>
-        <button id="changeDifficultyButton" class="bg-cyan-500 hover:bg-cyan-600 text-white font-bold py-2 px-4 rounded">Change Difficulty</button>
-        <br><br>
-        <button id="gameOverToHighScoresButton" class="bg-purple-500 hover:bg-purple-600 text-white font-bold py-2 px-4 rounded">View High Scores</button>
+        <div class="flex justify-center flex-wrap">
+            <button id="retryButton" class="modal-btn">Retry</button>
+            <button id="changeDifficultyButton" class="modal-btn secondary">Change Difficulty</button>
+        </div>
     </div>
+    
     <div id="highScoreScreen">
-        <h1 class="text-4xl font-bold mb-4 text-cyan-300">High Scores</h1>
-        <select id="highScoreDifficultySelect" class="text-black p-2 rounded mb-4">
-            <option value="peaceful">Peaceful</option>
-            <option value="normal">Normal</option>
-            <option value="hard" selected>Hard</option>
-            <option value="superHard">Super Hard</option>
-            <option value="impossible">Impossible</option>
-            <option value="ledianModus">Ledian Modus</option>
-        </select>
+        <h1 class="text-4xl font-bold mb-4 text-cyan-300 glowing-text">High Scores</h1>
+        <div class="difficulty-tabs">
+            <div class="difficulty-tab active" data-difficulty="normal">Normal</div>
+            <div class="difficulty-tab" data-difficulty="hard">Hard</div>
+            <div class="difficulty-tab" data-difficulty="superHard">Super Hard</div>
+            <div class="difficulty-tab" data-difficulty="impossible">Impossible</div>
+            <div class="difficulty-tab" data-difficulty="ledianModus">Ledian Modus</div>
+        </div>
         <div id="highScoreList"></div>
-        <button id="backFromHighScoresButton" class="bg-cyan-500 hover:bg-cyan-600 text-white font-bold py-2 px-4 rounded mt-4">Back</button>
+        <button id="backFromHighScoresButton" class="modal-btn secondary">Back</button>
     </div>
+    
     <button id="endGameButton">Spiel beenden</button>
+    
     <script>
         // Firebase configuration
         const firebaseConfig = {
@@ -191,28 +283,26 @@
         const ledianModusButton = document.getElementById('ledianModusButton');
         const endGameButton = document.getElementById('endGameButton');
         const viewHighScoresButton = document.getElementById('viewHighScoresButton');
-        const startToHighScoresButton = document.getElementById('startToHighScoresButton');
-        const gameOverToHighScoresButton = document.getElementById('gameOverToHighScoresButton');
         const backFromHighScoresButton = document.getElementById('backFromHighScoresButton');
-        const highScoreDifficultySelect = document.getElementById('highScoreDifficultySelect');
         const highScoreList = document.getElementById('highScoreList');
         const newHighScoreMessage = document.getElementById('newHighScoreMessage');
         const playerNameInput = document.getElementById('playerNameInput');
         const saveHighScoreButton = document.getElementById('saveHighScoreButton');
+        const difficultyTabs = document.querySelectorAll('.difficulty-tab');
 
         let score = 0;
         let gameRunning = false;
         let difficulty = 1;
         let selectedDifficulty = 'hard';
         let asteroidSpawnDelay = 0;
-        let lastTime = 0; // For delta-time calculation
+        let lastTime = 0;
         let isNewHighScore = false;
 
         const player = {
             x: canvas.width / 2,
             y: canvas.height / 2,
             radius: 20,
-            speed: 495, // Pixels per second (5 * 60 for 60 FPS equivalence)
+            speed: 495,
             dx: 0,
             dy: 0
         };
@@ -224,22 +314,30 @@
         // High score functions
         async function checkHighScore(score, difficulty) {
             try {
+                // Skip high score check for peaceful mode
+                if (difficulty === 'peaceful') return false;
+                
                 const highScoresRef = database.ref(`highscores/${difficulty}`);
-                const snapshot = await highScoresRef.orderByChild('score').limitToLast(10).once('value');
+                const snapshot = await highScoresRef.orderByChild('score').limitToLast(25).once('value');
                 
                 let isHighScore = false;
-                let lowestHighScore = 0;
                 let count = 0;
                 
-                snapshot.forEach(childSnapshot => {
+                snapshot.forEach(() => {
                     count++;
-                    const childData = childSnapshot.val();
-                    if (count === 1) lowestHighScore = childData.score;
-                    if (score > childData.score) isHighScore = true;
                 });
                 
-                // If there are fewer than 10 scores, any score is a high score
-                if (count < 10 && score > 0) isHighScore = true;
+                // If there are fewer than 25 scores, any score is a high score
+                if (count < 25 && score > 0) {
+                    isHighScore = true;
+                } else {
+                    // Check if score is higher than the lowest high score
+                    const lowestScoreSnapshot = await highScoresRef.orderByChild('score').limitToFirst(1).once('value');
+                    lowestScoreSnapshot.forEach(childSnapshot => {
+                        const childData = childSnapshot.val();
+                        if (score > childData.score) isHighScore = true;
+                    });
+                }
                 
                 return isHighScore;
             } catch (error) {
@@ -255,8 +353,28 @@
                 await newScoreRef.set({
                     name: name.substring(0, 15),
                     score: score,
-                    timestamp: Date.now()
+                    timestamp: Date.now(),
+                    date: new Date().toLocaleDateString(),
+                    time: new Date().toLocaleTimeString()
                 });
+                
+                // If we have more than 25 scores, remove the lowest one
+                const snapshot = await highScoresRef.orderByChild('score').once('value');
+                const scores = [];
+                snapshot.forEach(childSnapshot => {
+                    scores.push({
+                        id: childSnapshot.key,
+                        score: childSnapshot.val().score
+                    });
+                });
+                
+                if (scores.length > 25) {
+                    // Sort by score ascending and remove the lowest
+                    scores.sort((a, b) => a.score - b.score);
+                    const toRemove = scores[0];
+                    await highScoresRef.child(toRemove.id).remove();
+                }
+                
                 return true;
             } catch (error) {
                 console.error("Error saving high score:", error);
@@ -267,7 +385,7 @@
         async function getHighScores(difficulty) {
             try {
                 const highScoresRef = database.ref(`highscores/${difficulty}`);
-                const snapshot = await highScoresRef.orderByChild('score').limitToLast(10).once('value');
+                const snapshot = await highScoresRef.orderByChild('score').limitToLast(25).once('value');
                 
                 const scores = [];
                 snapshot.forEach(childSnapshot => {
@@ -291,19 +409,20 @@
                 return;
             }
             
-            let html = '<table id="highScoreTable" class="w-full"><tr><th>Rank</th><th>Name</th><th>Score</th></tr>';
+            let html = '<div class="high-score-list">';
             
             scores.forEach((score, index) => {
                 html += `
-                    <tr>
-                        <td class="text-center">${index + 1}</td>
-                        <td>${score.name}</td>
-                        <td class="text-center">${score.score}</td>
-                    </tr>
+                    <div class="high-score-item">
+                        <div class="high-score-rank">${index + 1}</div>
+                        <div class="high-score-name">${score.name}</div>
+                        <div class="high-score-value">${score.score}</div>
+                        <div class="high-score-date">${score.date} ${score.time}</div>
+                    </div>
                 `;
             });
             
-            html += '</table>';
+            html += '</div>';
             highScoreList.innerHTML = html;
         }
 
@@ -336,18 +455,18 @@
             if (isFast) {
                 radius = selectedDifficulty === 'ledianModus' ? 8 : 10;
                 color = '#ff6666';
-                speedMultiplier = selectedDifficulty === 'ledianModus' ? 300 : 180; // 5 * 60 or 3 * 60
+                speedMultiplier = selectedDifficulty === 'ledianModus' ? 300 : 180;
             } else {
                 radius = 20;
                 color = '#990000';
-                speedMultiplier = selectedDifficulty === 'ledianModus' ? 150 : 90; // 2.5 * 60 or 1.5 * 60
+                speedMultiplier = selectedDifficulty === 'ledianModus' ? 150 : 90;
             }
 
             if (edge === 0) { // Top
                 x = Math.random() * canvas.width;
                 y = -radius;
-                dx = (Math.random() - 0.5) * 240 * difficulty * speedMultiplier / 60; // 4 * 60
-                dy = Math.random() * 120 * difficulty * speedMultiplier / 60 + 120; // 2 * 60
+                dx = (Math.random() - 0.5) * 240 * difficulty * speedMultiplier / 60;
+                dy = Math.random() * 120 * difficulty * speedMultiplier / 60 + 120;
             } else if (edge === 1) { // Right
                 x = canvas.width + radius;
                 y = Math.random() * canvas.height;
@@ -448,7 +567,7 @@
         function gameLoop(timestamp) {
             if (!gameRunning) return;
 
-            const deltaTime = (timestamp - lastTime) / 1000; // Convert to seconds
+            const deltaTime = (timestamp - lastTime) / 1000;
             lastTime = timestamp;
 
             ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -498,7 +617,7 @@
             gameOverScreen.style.display = 'none';
             difficultyScreen.style.display = 'none';
             highScoreScreen.style.display = 'none';
-            asteroidSpawnDelay = selectedDifficulty === 'normal' ? 15 : 0; // In seconds
+            asteroidSpawnDelay = selectedDifficulty === 'normal' ? 15 : 0;
             endGameButton.style.display = selectedDifficulty === 'peaceful' ? 'block' : 'none';
             lastTime = performance.now();
             requestAnimationFrame(gameLoop);
@@ -508,12 +627,16 @@
             gameRunning = false;
             finalScore.textContent = score;
             
-            // Check if this is a new high score
-            isNewHighScore = await checkHighScore(score, selectedDifficulty);
-            
-            if (isNewHighScore) {
-                newHighScoreMessage.style.display = 'block';
-                playerNameInput.focus();
+            // Check if this is a new high score (skip for peaceful mode)
+            if (selectedDifficulty !== 'peaceful') {
+                isNewHighScore = await checkHighScore(score, selectedDifficulty);
+                
+                if (isNewHighScore) {
+                    newHighScoreMessage.style.display = 'block';
+                    playerNameInput.focus();
+                } else {
+                    newHighScoreMessage.style.display = 'none';
+                }
             } else {
                 newHighScoreMessage.style.display = 'none';
             }
@@ -547,11 +670,25 @@
             difficultyScreen.style.display = 'none';
             endGameButton.style.display = 'none';
             
-            // Load high scores for the selected difficulty
-            const difficulty = highScoreDifficultySelect.value;
-            const scores = await getHighScores(difficulty);
+            // Load high scores for the first tab (Normal)
+            const scores = await getHighScores('normal');
             displayHighScores(scores);
         }
+
+        // Event listeners for difficulty tabs
+        difficultyTabs.forEach(tab => {
+            tab.addEventListener('click', async () => {
+                // Remove active class from all tabs
+                difficultyTabs.forEach(t => t.classList.remove('active'));
+                // Add active class to clicked tab
+                tab.classList.add('active');
+                
+                // Load high scores for selected difficulty
+                const difficulty = tab.getAttribute('data-difficulty');
+                const scores = await getHighScores(difficulty);
+                displayHighScores(scores);
+            });
+        });
 
         document.addEventListener('keydown', e => {
             keys[e.key.toLowerCase()] = true;
@@ -624,15 +761,7 @@
         endGameButton.addEventListener('click', showDifficultyScreen);
         
         viewHighScoresButton.addEventListener('click', showHighScoreScreen);
-        startToHighScoresButton.addEventListener('click', showHighScoreScreen);
-        gameOverToHighScoresButton.addEventListener('click', showHighScoreScreen);
         backFromHighScoresButton.addEventListener('click', showDifficultyScreen);
-        
-        highScoreDifficultySelect.addEventListener('change', async () => {
-            const difficulty = highScoreDifficultySelect.value;
-            const scores = await getHighScores(difficulty);
-            displayHighScores(scores);
-        });
         
         saveHighScoreButton.addEventListener('click', async () => {
             const name = playerNameInput.value.trim();
