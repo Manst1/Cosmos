@@ -251,7 +251,10 @@
     <div id="startScreen">
         <h1 class="text-4xl font-bold mb-4 text-cyan-300 glowing-text">Cosmic Collector</h1>
         <p class="text-lg mb-6">Use arrow keys or WASD to move your spaceship.<br>Collect energy orbs (blue) to score points.<br>Avoid asteroids (bright red are fast, dark red are slow)!</p>
-        <button id="startButton" class="modal-btn">Start Game</button>
+        <div class="flex justify-center flex-wrap">
+            <button id="startButton" class="modal-btn">Start Game</button>
+            <button id="backToDifficultyButton" class="modal-btn secondary">Change Difficulty</button>
+        </div>
     </div>
     
     <div id="gameOverScreen">
@@ -317,6 +320,7 @@
         const startButton = document.getElementById('startButton');
         const retryButton = document.getElementById('retryButton');
         const changeDifficultyButton = document.getElementById('changeDifficultyButton');
+        const backToDifficultyButton = document.getElementById('backToDifficultyButton');
         const peacefulButton = document.getElementById('peacefulButton');
         const normalButton = document.getElementById('normalButton');
         const hardButton = document.getElementById('hardButton');
@@ -564,9 +568,11 @@
         }
 
         function createOrb() {
-            const x = Math.random() * canvas.width;
-            const y = Math.random() * canvas.height;
-            orbs.push({ x, y, radius: 10 });
+            // Ensure orbs spawn fully within the canvas boundaries
+            const radius = 10;
+            const x = radius + Math.random() * (canvas.width - 2 * radius);
+            const y = radius + Math.random() * (canvas.height - 2 * radius);
+            orbs.push({ x, y, radius });
         }
 
         function createAsteroid() {
@@ -904,6 +910,7 @@
         startButton.addEventListener('click', startGame);
         retryButton.addEventListener('click', showStartScreen);
         changeDifficultyButton.addEventListener('click', showDifficultyScreen);
+        backToDifficultyButton.addEventListener('click', showDifficultyScreen);
         endGameButton.addEventListener('click', showDifficultyScreen);
         
         viewHighScoresButton.addEventListener('click', showHighScoreScreen);
